@@ -1,0 +1,74 @@
+.landingPageContainer{
+  width: 100vw;
+  height: 100vh;
+  /* background: url(https://images.pexels.com/photos/4004374/pexels-photo-4004374.jpeg?_gl=1*1v02qp3*_ga*MTI4MjA0OTc5Ny4xNzU2ODIzMDA1*_ga_8JE65Q40S6*czE3NTc4NTUyNzEkbzMkZzEkdDE3NTc4NTU1MzYkajQ1JGwwJGgw); */
+  background-size: cover;
+  background-repeat: no-repeat ;
+  color: white;
+  background: linear-gradient(rgb(0, 217, 255), rgb(234, 232, 232));
+}
+.landingPageContainer nav{
+  padding-inline: 1.2rem;
+  padding-block: 1rem;
+  /* background: linear-gradient(rgb(0, 247, 255), rgb(0, 255, 191)); */
+  background-color: rgb(214, 226, 236);
+  color: rgb(0,0,0);
+  display: flex;
+  justify-content: space-between;
+  height: 4rem;
+}
+
+.landingPageContainer nav h2{
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.landingPageContainer nav .navlist{
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 300;
+}
+.landingPageContainer img{
+  width: 2rem;
+  height: 2.5rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  margin-left: 0.5rem;
+}
+.navHeader{
+  display: flex;
+  justify-content: center;
+}
+.navHeader h2{
+  margin-top: 0.5rem;
+  margin-left: 0.6rem;
+}
+.navbar{
+  position: relative;
+  background-color: rgb(101, 138, 169);
+}
+.body img{
+  margin-top: 8rem;
+  width: 30rem;
+  height: auto;
+}
+.body h3{
+  color: black;
+  margin-left: 4rem;
+  /* margin-bottom: 1rem; */
+  margin-top: 9rem;
+  
+}
+.body p{
+  color: black;
+  margin-left: 4rem;
+  margin-bottom: 1rem;
+}
+.body{
+  display: flex;
+  justify-content: center;
+}
