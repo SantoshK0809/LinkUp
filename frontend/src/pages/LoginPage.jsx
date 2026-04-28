@@ -102,7 +102,7 @@ export const LoginPage = () => {
               onChange={(e) => {
                 setUsername(e.target.value);
               }}
-              placeholder="you@example.com"
+              placeholder="Enter your email"
               className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -117,7 +117,7 @@ export const LoginPage = () => {
               onChange={(e) => {
                 setPassword(e.target.value);
               }}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

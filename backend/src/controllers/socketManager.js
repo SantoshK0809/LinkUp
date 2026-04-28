@@ -7,11 +7,11 @@ let timeOnline = {};
 export const connectToSocket = (server) => {
   const io = new Server(server, {
     cors: {
-        origin : "*",
-        methods : ["GET", "POST"],
-        allowedHeaders : ["*"],
-        credentials: true
-    }
+      origin: "*",
+      methods: ["GET", "POST"],
+      allowedHeaders: ["*"],
+      credentials: true,
+    },
   });
 
   io.on("connection", (socket) => {
@@ -26,11 +26,16 @@ export const connectToSocket = (server) => {
 
       timeOnline[socket.id] = new Date();
 
+      if (!message || !message[path] || !Array.isArray(message[path])) {
+        console.error("Invalid message structure:", message);
+        return;
+      }
+
       for (let a = 0; a < message[path].length; a++) {
         io.to(connections[path][a]).emit(
           "user-joined",
           socket.id,
-          connections[path]
+          connections[path],
         );
       }
 
@@ -40,7 +45,7 @@ export const connectToSocket = (server) => {
             "chat-message",
             message[path][a]["data"],
             message[path][a]["sender"],
-            message[path][a]["socket-id-sender"]
+            message[path][a]["socket-id-sender"],
           );
         }
       }
@@ -58,7 +63,7 @@ export const connectToSocket = (server) => {
           }
           return [room, isFound];
         },
-        ["", false]
+        ["", false],
       );
 
       if (found == true) {
@@ -89,20 +94,20 @@ export const connectToSocket = (server) => {
       var key;
 
       for (const [k, v] of JSON.parse(
-        JSON.stringify(Object.entries(connections))
+        JSON.stringify(Object.entries(connections)),
       )) {
         for (let a = 0; a < v.length; ++a) {
           if (v[a] === socket.id) {
-            key = k
-            for(let a = 0; a < connections[key].length; ++a){
-                io.to(connections[key][a].emit('user-left', socket.id))
+            key = k;
+            for (let a = 0; a < connections[key].length; ++a) {
+              io.to(connections[key][a].emit("user-left", socket.id));
             }
-            var index = connections[key].indexOf(socket.id)
+            var index = connections[key].indexOf(socket.id);
 
-            connections[key].splice(index, 1)
+            connections[key].splice(index, 1);
 
-            if(connections[key].length ===0){
-                delete connections[key];
+            if (connections[key].length === 0) {
+              delete connections[key];
             }
           }
         }

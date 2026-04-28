@@ -99,14 +99,14 @@ export const RegisterPage = () => {
               onChange={(e) => {
                 setName(e.target.value);
               }}
-              placeholder="John Doe"
+              placeholder="Enter your fullname"
               className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Username */}
           <div>
-            <label className="text-sm text-gray-600">Username</label>
+            <label className="text-sm text-gray-600">Email</label>
             <input
               type="text"
               name="username"
@@ -114,7 +114,7 @@ export const RegisterPage = () => {
               onChange={(e) => {
                 setUsername(e.target.value);
               }}
-              placeholder="johndoe123"
+              placeholder="Enter your email"
               className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -129,7 +129,7 @@ export const RegisterPage = () => {
               onChange={(e) => {
                 setPassword(e.target.value);
               }}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
