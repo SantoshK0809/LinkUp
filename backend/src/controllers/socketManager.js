@@ -26,16 +26,20 @@ export const connectToSocket = (server) => {
 
       timeOnline[socket.id] = new Date();
 
-      if (!message || !message[path] || !Array.isArray(message[path])) {
-        console.error("Invalid message structure:", message);
-        return;
-      }
+      // Emit user-joined to everyone in the room
 
-      for (let a = 0; a < message[path].length; a++) {
+      // if (!message || !message[path] || !Array.isArray(message[path])) {
+      //   console.error("Invalid message structure:", message);
+      //   return;
+      // }
+
+      // for (let a = 0; a < message[path].length; a++) {
+
+      for (let a = 0; a < connections[path].length; a++) {
         io.to(connections[path][a]).emit(
           "user-joined",
           socket.id,
-          connections[path],
+          connections[path]
         );
       }
 
@@ -76,7 +80,7 @@ export const connectToSocket = (server) => {
           data: data,
           "socket-id-sender": socket.id,
         });
-        console.log("message", key, ":", sender, data);
+        console.log("message", matchingRoom, ":", sender, data);
 
         connections[matchingRoom].forEach((element) => {
           io.to(element).emit("chat-message", data, sender, socket.id);
@@ -100,7 +104,7 @@ export const connectToSocket = (server) => {
           if (v[a] === socket.id) {
             key = k;
             for (let a = 0; a < connections[key].length; ++a) {
-              io.to(connections[key][a].emit("user-left", socket.id));
+              io.to(connections[key][a]).emit("user-left", socket.id);
             }
             var index = connections[key].indexOf(socket.id);
 
