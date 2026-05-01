@@ -7,6 +7,10 @@ import { LoginPage } from "./pages/LoginPage";
 
 import AuthProvider from "./context/AuthContext";
 import VideoMeet from "./pages/VideoMeet";
+import Home from "./pages/Home";
+import HistoryWithAuth from "./pages/History";
+import CreateMeeting from "./pages/CreateMeeting";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -16,7 +20,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/:url" element={<VideoMeet />} />
+          <Route path="/history" element={<HistoryWithAuth />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/create-meeting" element={<CreateMeeting />} />
+          <Route path="/meet/:url" element={<VideoMeet />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </Router>

@@ -1,4 +1,5 @@
-import React, { useEffect, useNavigate, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { TextField, Button, IconButton, Badge } from "@mui/material";
 import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
@@ -38,7 +39,7 @@ const VideoMeet = () => {
   let [screen, setScreen] = useState();
   let [showModal, setShowModal] = useState(false);
   let [messages, setMessages] = useState([]);
-  let [message, setMessage] = useState();
+  let [message, setMessage] = useState("");
   let [newMessages, setNewMessages] = useState(0);
 
   let [askForUsername, setAskForUsername] = useState(true);
@@ -268,7 +269,7 @@ const VideoMeet = () => {
 
   let addMessage = (data, sender, socketIdSender) => {
     setMessages((prevMessages) => [...prevMessages, { sender, data }]);
-    if(socketIdSender !== socketIdRef.current) {
+    if (socketIdSender !== socketIdRef.current) {
       setNewMessages((prevNewMessages) => prevNewMessages + 1);
     }
   };
@@ -404,11 +405,11 @@ const VideoMeet = () => {
   const handleEndCall = () => {
     try {
       let tracks = localVideoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach((track) => track.stop());
     } catch (error) {
       console.log(error);
     }
-    navigate('/home');
+    navigate("/home");
   };
 
   let getDisplayMediaSuccess = (stream) => {
@@ -504,15 +505,27 @@ const VideoMeet = () => {
     // this.setState({ message: "", sender: username })
   };
 
+  const totalUsers = videos.length + 1;
+
+  const getGrid = () => {
+    if (totalUsers <= 1) return "grid-cols-1";
+    if (totalUsers === 2) return "grid-cols-2";
+    if (totalUsers <= 4) return "grid-cols-2";
+    if (totalUsers <= 6) return "grid-cols-3";
+    return "grid-cols-4";
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-200 text-white">
       {/* ================= LOBBY ================= */}
       {askForUsername === true ? (
         <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-md bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
+          <div className="w-full max-w-md bg-gray-400 p-6 rounded-2xl shadow-xl space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold">Enter Lobby</h2>
-              <p className="text-gray-400 text-sm">
+              <h2 className="text-2xl text-gray-800 font-semibold">
+                Enter Lobby
+              </h2>
+              <p className="text-gray-700 text-sm">
                 Set your name and preview camera
               </p>
             </div>
@@ -604,6 +617,19 @@ const VideoMeet = () => {
             muted
             className="absolute inset-0 w-full h-full object-cover"
           />
+
+          {/* <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <video
+              ref={(ref) => {
+                if (ref && window.localStream) {
+                  ref.srcObject = window.localStream;
+                }
+              }}
+              autoPlay
+              muted
+              className="max-h-full max-w-full object-contain"
+            />
+          </div> */}
 
           {/* ===== Participants Grid ===== */}
           <div className="absolute inset-0 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
