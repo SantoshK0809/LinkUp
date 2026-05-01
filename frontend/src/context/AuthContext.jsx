@@ -50,6 +50,39 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const getUserHistory = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await client.get(`/get_all_activity?token=${token}`);
+      // console.log(res.data);
+
+      if (res.status === httpStatus.OK) {
+        console.log(res.data.meetings);
+        return res.data.meetings;
+      }
+    } catch (error) {
+      console.log(`Error in getUserHistory ${error}`);
+      throw error;
+    }
+  };
+
+  const addToUserHistory = async (token, meetingCode) => {
+    try {
+      const res = await client.post("/add_to_activity", {
+        token,
+        meetingCode,
+      });
+      console.log(res.data);
+
+      if (res.status === httpStatus.OK) {
+        return res.data;
+      }
+    } catch (error) {
+      console.log(`Error in addToHistory ${error}`);
+      throw error;
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUserData(null);
@@ -63,6 +96,8 @@ const AuthProvider = ({ children }) => {
     setUserData,
     handleRegister,
     handleLogin,
+    getUserHistory,
+    addToUserHistory,
   };
 
   return (
