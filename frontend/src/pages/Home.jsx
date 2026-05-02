@@ -53,7 +53,8 @@ const Home = () => {
     if (!meetingCode.trim()) return;
     const token = localStorage.getItem("token");
     await addToUserHistory(token, meetingCode);
-    navigate(`/meet/${meetingCode}`);
+    localStorage.setItem("meetingCode", meetingCode);
+    navigate(`/lobby/${meetingCode}`);
   };
 
   return (
