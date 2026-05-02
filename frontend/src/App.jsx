@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import HistoryWithAuth from "./pages/History";
 import CreateMeeting from "./pages/CreateMeeting";
 import NotFound from "./pages/NotFound";
+import Lobby from "./pages/Lobby";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/history" element={<HistoryWithAuth />} />
           <Route path="/home" element={<Home />} />
           <Route path="/create-meeting" element={<CreateMeeting />} />
+          <Route path="/lobby/:code" element={<Lobby />} />
           <Route path="/meet/:url" element={<VideoMeet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
