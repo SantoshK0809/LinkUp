@@ -42,6 +42,7 @@ const AuthProvider = ({ children }) => {
 
       if (res.status === httpStatus.OK) {
         localStorage.setItem("token", res.data.token);
+        setUserData(res.data);
         return res.data;
       }
     } catch (error) {
@@ -78,7 +79,7 @@ const AuthProvider = ({ children }) => {
         return res.data;
       }
     } catch (error) {
-      console.log(`Error in addToHistory ${error}`);
+      console.log(`Error in addToHistory ${error.message}`);
       throw error;
     }
   };

@@ -35,7 +35,7 @@ const login = async (req, res) => {
     await user.save();
     return res
       .status(httpStatus.OK)
-      .json({ message: "Login successful", token: token });
+      .json({ message: "Login successful", token: token, userData: user.name });
   } catch (error) {
     return res.status(500).json({ message: `Something went wrong ${error}` });
   }
