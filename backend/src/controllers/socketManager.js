@@ -131,6 +131,8 @@ import { Server } from "socket.io";
 let messages = {}; // room -> messages[]
 let timeOnline = {}; // socketId -> time
 
+let userNames = {}; // socketId -> userName
+
 export const connectToSocket = (server) => {
   const io = new Server(server, {
     cors: {
@@ -147,18 +149,29 @@ export const connectToSocket = (server) => {
     // =========================
     // JOIN ROOM
     // =========================
-    socket.on("join-call", (roomId) => {
+    socket.on("join-call", (roomId, userName) => {
       socket.join(roomId);
       socket.room = roomId;
+      userNames[socket.id] = userName || "User";
       timeOnline[socket.id] = new Date();
 
       const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
 
       // Send existing users to new user
-      socket.emit("existing-users", clients.filter(id => id !== socket.id));
+      const existingUsers = clients
+        .filter((id) => id !== socket.id)
+        .map((id) => ({
+          socketId: id,
+          userName: userNames[id],
+        }));
+
+      socket.emit("existing-users", existingUsers);
 
       // Notify others
-      socket.to(roomId).emit("user-joined", socket.id);
+      socket.to(roomId).emit("user-joined", {
+        socketId: socket.id,
+        userName: userNames[socket.id],
+      });
 
       // Send old messages (if any)
       if (messages[roomId]) {

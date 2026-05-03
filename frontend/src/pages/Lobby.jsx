@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@mui/material";
 import { toast } from "sonner";
@@ -10,10 +10,12 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import LoggedInNav from "../components/LoggedInNav";
+import { AuthContextData } from "../context/AuthContext";
 
 const Lobby = () => {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { userData, setUserData } = useContext(AuthContextData);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -92,6 +94,7 @@ const Lobby = () => {
     const getCode = localStorage.getItem("meetingCode");
     console.log(getCode);
     // setCode(getCode);
+    // setUserData({ username: username.trim() });
     navigate(`/meet/${getCode}`, {
       state: { username: username.trim(), camOn, micOn },
     });

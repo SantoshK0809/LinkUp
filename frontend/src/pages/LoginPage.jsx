@@ -14,7 +14,7 @@ export const LoginPage = () => {
   //   setPassword(e.target.value);
   // };
 
-  const { handleLogin } = useContext(AuthContextData);
+  const { handleLogin, setUserData } = useContext(AuthContextData);
   const navigate = useNavigate();
 
   // const token = localStorage.getItem("token");
@@ -33,6 +33,8 @@ export const LoginPage = () => {
 
     try {
       const res = await handleLogin(username, password);
+      console.log(`Response from handleLogin call :`, res);
+      // setUserData(res);
 
       console.log(
         `Username : ${username} Password : ${password} of LoggedIn user.`,
@@ -40,11 +42,11 @@ export const LoginPage = () => {
 
       if (res && res.message) {
         setPassword("");
-      setUsername("");
+        setUsername("");
         setMessage(res.message);
         setTimeout(() => setMessage(""), 3000);
       }
-      
+
       setTimeout(() => navigate("/home"), 2000);
     } catch (e) {
       console.log(e);
