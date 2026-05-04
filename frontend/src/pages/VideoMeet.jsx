@@ -13,6 +13,8 @@ import ChatIcon from "@mui/icons-material/Chat";
 import { io } from "socket.io-client";
 import Lobby from "./Lobby";
 import { AuthContextData } from "../context/AuthContext";
+import RemoteVideo from "../components/RemoteVideo";
+import Avatar from "../components/Avatar";
 
 const server = import.meta.env.VITE_BASE_URL;
 
@@ -53,6 +55,7 @@ const VideoMeet = () => {
   let [messages, setMessages] = useState([]);
   let [message, setMessage] = useState("");
   let [newMessages, setNewMessages] = useState(0);
+  const [activeUser, setActiveUser] = useState(null);
 
   // let [askForUsername, setAskForUsername] = useState(true);
   let [userName, setUserName] = useState("");
@@ -101,6 +104,19 @@ const VideoMeet = () => {
   //   };
   //   init();
   // }, []);
+
+  const selfUser = {
+    socketId: socketIdRef.current,
+    stream: localStreamRef.current,
+    userName: userName,
+    videoEnabled: video,
+  };
+
+  const participants = [selfUser, ...videos];
+
+  const stripUsers = participants.filter(
+    (u) => u.socketId !== activeUser?.socketId,
+  );
 
   const getMediaStream = async () => {
     try {
@@ -206,13 +222,61 @@ const VideoMeet = () => {
     };
 
     // Remote stream handling
+    // pc.ontrack = (event) => {
+    //   const stream = event.streams[0];
+    //   if (!stream) return;
+
+    //   // SET ACTIVE USER TO REMOTE (NOT YOURSELF)
+    //   setActiveUser((prev) => {
+    //     // Only set if no active user yet (initial)
+    //     if (!prev) {
+    //       return {
+    //         socketId,
+    //         stream,
+    //         userName: peerUserNames,
+    //         videoEnabled: true,
+    //       };
+    //     }
+    //     return prev;
+    //   });
+
+    //   setVideos((prev) => {
+    //     const exists = prev.find((v) => v.socketId === socketId);
+    //     const peerUserName = peerUserNames.current[socketId] || "User";
+
+    //     if (exists) {
+    //       return prev.map((v) =>
+    //         v.socketId === socketId
+    //           ? { ...v, stream, userName: peerUserName }
+    //           : v,
+    //       );
+    //     }
+
+    //     return [...prev, { socketId, stream, userName: peerUserName }];
+    //   });
+    // };
+
     pc.ontrack = (event) => {
       const stream = event.streams[0];
       if (!stream) return;
 
+      const peerUserName = peerUserNames.current[socketId] || "User";
+
+      // Only set active user if none exists
+      setActiveUser((prev) => {
+        if (!prev) {
+          return {
+            socketId,
+            stream,
+            userName: peerUserName,
+            videoEnabled: true,
+          };
+        }
+        return prev;
+      });
+
       setVideos((prev) => {
         const exists = prev.find((v) => v.socketId === socketId);
-        const peerUserName = peerUserNames.current[socketId] || "User";
 
         if (exists) {
           return prev.map((v) =>
@@ -253,6 +317,12 @@ const VideoMeet = () => {
 
     socketRef.current.on("connect", () => {
       socketIdRef.current = socketRef.current.id;
+      setActiveUser({
+        socketId: socketRef.current.id,
+        stream: localStreamRef.current,
+        userName: location.state?.username || "You",
+        videoEnabled: true,
+      });
       socketRef.current.emit(
         "join-call",
         window.location.pathname,
@@ -345,6 +415,12 @@ const VideoMeet = () => {
     // USER LEFT
     socketRef.current.on("user-left", (id) => {
       cleanupPeer(id);
+      setActiveUser((prev) => {
+        if (prev?.socketId === id) {
+          return null; // or fallback to self
+        }
+        return prev;
+      });
     });
 
     socketRef.current.on("chat-message", addMessage);
@@ -530,23 +606,202 @@ const VideoMeet = () => {
   const totalUsers = videos.length + 1;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-900 text-white">
-      {/* ===== HEADER ===== */}
-      <header className="flex items-center justify-between border-b border-gray-300 px-6 py-3">
-        <h1 className="text-sm font-medium text-white">LinkUp Meeting</h1>
-        <span className="text-xs text-white">
+    // <div className="flex min-h-screen flex-col bg-gray-900 text-white">
+    //   {/* ===== HEADER ===== */}
+    //   <header className="flex items-center justify-between border-b border-gray-300 px-6 py-3">
+    //     <h1 className="text-sm font-medium text-white">LinkUp Meeting</h1>
+    //     <span className="text-xs text-white">
+    //       {videos.length + 1} participants
+    //     </span>
+    //   </header>
+
+    //   {/* ===== MAIN ===== */}
+    //   <div className="flex flex-1 overflow-hidden">
+    //     {/* ===== VIDEO GRID ===== */}
+    //     <main className="flex-1 p-4">
+    //       <div className="grid h-full gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+    //         {/* SELF */}
+    //         <div
+    //           onClick={() =>
+    //             setActiveUser({
+    //               socketId: socketIdRef.current,
+    //               stream: localStreamRef.current,
+    //               userName: userName,
+    //               videoEnabled: video,
+    //             })
+    //           }
+    //           className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gray-700"
+    //         >
+    //           {video ? (
+    //             <video
+    //               ref={(ref) => {
+    //                 localVideoRef.current = ref;
+    //                 if (ref && localStreamRef.current) {
+    //                   if (ref.srcObject !== localStreamRef.current) {
+    //                     ref.srcObject = localStreamRef.current;
+    //                   }
+    //                 }
+    //               }}
+    //               autoPlay
+    //               muted
+    //               className="w-full h-full object-cover"
+    //             />
+    //           ) : (
+    //             // <div className="flex items-center justify-center h-full w-full bg-gray-800 text-gray-400 text-xl">
+    //             //   {userName ? userName[0].toUpperCase() : "?"}
+    //             // </div>
+    //             <Avatar userName={userName}/>
+    //           )}
+    //           <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
+    //             {userName} (You)
+    //           </div>
+    //         </div>
+
+    //         {/* OTHERS */}
+    //         {videos.map((video) => (
+    //           <div
+    //             key={video.socketId}
+    //             onClick={() => setActiveUser(video)}
+    //             className="relative cursor-pointer aspect-video bg-black rounded-xl overflow-hidden border border-gray-700"
+    //           >
+    //             {/* <video
+    //               data-socket={video.socketId}
+    //               ref={(ref) => {
+    //                 if (ref && video.stream) {
+    //                   if (ref.srcObject !== video.stream) {
+    //                     ref.srcObject = video.stream;
+    //                   }
+    //                 }
+    //               }}
+    //               autoPlay
+    //               playsInline
+    //               className="w-full h-full object-cover"
+    //             /> */}
+    //             <RemoteVideo stream={video.stream} />
+    //             {/* <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
+    //               {video.userName || "User"}
+    //             </div> */}
+    //             <Avatar userName={video.userName} />
+    //           </div>
+    //         ))}
+    //       </div>
+    //     </main>
+
+    //     {/* ===== SIDE PANEL (NOT MODAL ANYMORE) ===== */}
+    //     {showModal && (
+    //       <aside className="hidden md:flex w-80 flex-col bg-gray-800 border-l border-gray-700">
+    //         <div className="p-4 border-b border-gray-700 flex justify-between">
+    //           <h2 className="text-sm font-semibold">Chat</h2>
+    //           <button onClick={() => setShowModal(false)}>✕</button>
+    //         </div>
+
+    //         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    //           {messages.length !== 0 ? (
+    //             messages.map((item, index) => (
+    //               <div key={index}>
+    //                 <p className="text-sm font-semibold text-blue-400">
+    //                   {item.sender}
+    //                 </p>
+    //                 <p className="text-sm text-gray-300">{item.data}</p>
+    //               </div>
+    //             ))
+    //           ) : (
+    //             <p className="text-gray-400">No messages yet</p>
+    //           )}
+    //         </div>
+
+    //         <div className="p-4 border-t border-gray-700 flex gap-2">
+    //           <input
+    //             value={message}
+    //             onChange={(e) => setMessage(e.target.value)}
+    //             placeholder="Type a message..."
+    //             className="flex-1 px-3 py-2 rounded-lg bg-gray-700 outline-none"
+    //           />
+    //           <button
+    //             onClick={sendMessage}
+    //             className="bg-blue-600 px-4 rounded-lg"
+    //           >
+    //             Send
+    //           </button>
+    //         </div>
+    //       </aside>
+    //     )}
+    //   </div>
+
+    //   {/* ===== FOOTER ===== */}
+    //   <footer className="flex items-center justify-center gap-4 border-t border-gray-300 px-6 py-4">
+    //     <button
+    //       disabled={!mediaReady}
+    //       onClick={handleVideo}
+    //       className={
+    //         video
+    //           ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
+    //           : "p-3 bg-red-500 rounded-full hover:bg-red-600"
+    //       }
+    //     >
+    //       {video ? <VideocamIcon /> : <VideocamOffIcon />}
+    //     </button>
+
+    //     <button
+    //       disabled={!mediaReady}
+    //       onClick={handleAudio}
+    //       className={
+    //         audio
+    //           ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
+    //           : "p-3 bg-red-500 rounded-full hover:bg-red-600"
+    //       }
+    //     >
+    //       {audio ? <MicIcon /> : <MicOffIcon />}
+    //     </button>
+
+    //     {screenAvailable && (
+    //       <button
+    //         disabled={!mediaReady}
+    //         onClick={handleScreen}
+    //         className={
+    //           screen
+    //             ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
+    //             : "p-3 bg-red-500 rounded-full hover:bg-red-600"
+    //         }
+    //       >
+    //         {screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+    //       </button>
+    //     )}
+
+    //     <button
+    //       onClick={() => setShowModal(!showModal)}
+    //       className="p-3 bg-gray-700 rounded-full hover:bg-gray-600 flex items-center justify-center"
+    //     >
+    //       <Badge badgeContent={newMessages} color="secondary">
+    //         {showModal ? <ChatBubbleIcon /> : <ChatIcon />}
+    //       </Badge>
+    //     </button>
+
+    //     <button
+    //       onClick={handleEndCall}
+    //       className="p-3 bg-red-600 rounded-full hover:bg-red-500"
+    //     >
+    //       <CallEndIcon />
+    //     </button>
+    //   </footer>
+    // </div>
+
+    <div className="flex flex-col h-screen bg-gray-800 text-white">
+      {/* HEADER */}
+      <header className="px-6 py-3 bg-gray-900 flex justify-between items-center border-b border-gray-800">
+        <h1 className="text-sm font-semibold">LinkUp</h1>
+        <span className="text-xs text-gray-400">
           {videos.length + 1} participants
         </span>
       </header>
 
-      {/* ===== MAIN ===== */}
+      {/* MAIN AREA */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ===== VIDEO GRID ===== */}
-        <main className="flex-1 p-4">
-          <div className="grid h-full gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {/* SELF */}
-            <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gray-700">
-              {video ? (
+        {/* MAIN VIDEO */}
+        <div className="flex-1 p-3 flex justify-center items-center">
+          <div className="relative w-[60%] h-[90%] bg-black rounded overflow-hidden">
+            {activeUser?.stream?.getVideoTracks?.()[0]?.enabled ?? true ? (
+              activeUser?.socketId === socketIdRef.current ? (
                 <video
                   ref={(ref) => {
                     localVideoRef.current = ref;
@@ -561,42 +816,22 @@ const VideoMeet = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="flex items-center justify-center h-full w-full bg-gray-800 text-gray-400 text-xl">
-                  {userName ? userName[0].toUpperCase() : "?"}
-                </div>
-              )}
-              <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
-                {userName} (You)
-              </div>
-            </div>
-
-            {/* OTHERS */}
-            {videos.map((video) => (
-              <div
-                key={video.socketId}
-                className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gray-700"
-              >
-                <video
-                  data-socket={video.socketId}
-                  ref={(ref) => {
-                    if (ref && video.stream) {
-                      if (ref.srcObject !== video.stream) {
-                        ref.srcObject = video.stream;
-                      }
-                    }
-                  }}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
+                <RemoteVideo
+                  key={activeUser?.socketId}
+                  stream={activeUser?.stream}
                 />
-                <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
-                  {video.userName || "User"}
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
+              )
+            ) : (
+              <Avatar userName={activeUser?.userName} />
+            )}
 
+            <div className="absolute bottom-3 left-3 text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+              {activeUser?.userName || "You"}
+            </div>
+          </div>
+        </div>
+
+        {/* CHAT PANEL */}
         {/* ===== SIDE PANEL (NOT MODAL ANYMORE) ===== */}
         {showModal && (
           <aside className="hidden md:flex w-80 flex-col bg-gray-800 border-l border-gray-700">
@@ -638,28 +873,63 @@ const VideoMeet = () => {
         )}
       </div>
 
-      {/* ===== FOOTER ===== */}
-      <footer className="flex items-center justify-center gap-4 border-t border-gray-300 px-6 py-4">
+      {/* 🔥 BOTTOM STRIP (IMPORTANT FIX) */}
+      <div className="flex gap-2 p-2 overflow-x-auto bg-gray-900 border-t border-gray-800">
+        {stripUsers.map((user) => {
+          console.log("User in strip Users are: " + JSON.stringify(user));
+          console.log(
+            "User in strip User Stream : " + JSON.stringify(user.stream),
+          );
+          const isVideoOn = user.stream?.getVideoTracks?.()[0]?.enabled ?? true;
+
+          return (
+            <div
+              key={user.socketId}
+              onClick={() => setActiveUser(user)}
+              className="relative w-40 aspect-video bg-black mb-2 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+            >
+              {isVideoOn ? (
+                user.socketId === socketIdRef.current ? (
+                  <video
+                    ref={(ref) => {
+                      localVideoRef.current = ref;
+                      if (ref && localStreamRef.current) {
+                        if (ref.srcObject !== localStreamRef.current) {
+                          ref.srcObject = localStreamRef.current;
+                        }
+                      }
+                    }}
+                    autoPlay
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <RemoteVideo userName={user.userName} stream={user.stream} />
+                )
+              ) : (
+                <Avatar userName={user.userName} />
+              )}
+
+              <div className="absolute bottom-1 left-1 text-[10px] bg-black/60 px-2 py-0.5 rounded">
+                {user.userName || "User"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CONTROLS */}
+      <footer className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-4 bg-gray-900/80 backdrop-blur px-6 py-3 rounded-full">
         <button
-          disabled={!mediaReady}
           onClick={handleVideo}
-          className={
-            video
-              ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
-              : "p-3 bg-red-500 rounded-full hover:bg-red-600"
-          }
+          className={`p-3 rounded-full ${video ? "bg-gray-700" : "bg-red-500"}`}
         >
           {video ? <VideocamIcon /> : <VideocamOffIcon />}
         </button>
 
         <button
-          disabled={!mediaReady}
           onClick={handleAudio}
-          className={
-            audio
-              ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
-              : "p-3 bg-red-500 rounded-full hover:bg-red-600"
-          }
+          className={`p-3 rounded-full ${audio ? "bg-gray-700" : "bg-red-500"}`}
         >
           {audio ? <MicIcon /> : <MicOffIcon />}
         </button>
@@ -680,17 +950,12 @@ const VideoMeet = () => {
 
         <button
           onClick={() => setShowModal(!showModal)}
-          className="p-3 bg-gray-700 rounded-full hover:bg-gray-600 flex items-center justify-center"
+          className="p-3 bg-gray-700 rounded-full"
         >
-          <Badge badgeContent={newMessages} color="secondary">
-            {showModal ? <ChatBubbleIcon /> : <ChatIcon />}
-          </Badge>
+          <ChatIcon />
         </button>
 
-        <button
-          onClick={handleEndCall}
-          className="p-3 bg-red-600 rounded-full hover:bg-red-500"
-        >
+        <button onClick={handleEndCall} className="p-3 bg-red-600 rounded-full">
           <CallEndIcon />
         </button>
       </footer>
