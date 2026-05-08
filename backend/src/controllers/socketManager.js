@@ -1,4 +1,6 @@
 import { Server } from "socket.io";
+import Schedule from "../models/schedule.model.js";
+import getJoinState from "../utils/join.meeting.js";
 
 let messages = {}; // room -> messages[]
 let timeOnline = {}; // socketId -> time
@@ -19,40 +21,128 @@ export const connectToSocket = (server) => {
     console.log("User Connected:", socket.id);
 
     // JOIN ROOM
-    socket.on("join-call", (roomId, userName) => {
-      socket.join(roomId);
-      socket.room = roomId;
-      userNames[socket.id] = userName || "User";
-      timeOnline[socket.id] = new Date();
+    // socket.on("join-call", (roomId, userName) => {
+    //   socket.join(roomId);
+    //   socket.room = roomId;
+    //   userNames[socket.id] = userName || "User";
+    //   timeOnline[socket.id] = new Date();
 
-      const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+    //   const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
 
-      // Send existing users to new user
-      const existingUsers = clients
-        .filter((id) => id !== socket.id)
-        .map((id) => ({
-          socketId: id,
-          userName: userNames[id],
-        }));
+    //   // Send existing users to new user
+    //   const existingUsers = clients
+    //     .filter((id) => id !== socket.id)
+    //     .map((id) => ({
+    //       socketId: id,
+    //       userName: userNames[id],
+    //     }));
 
-      socket.emit("existing-users", existingUsers);
+    //   socket.emit("existing-users", existingUsers);
 
-      // Notify others
-      socket.to(roomId).emit("user-joined", {
-        socketId: socket.id,
-        userName: userNames[socket.id],
-      });
+    //   // Notify others
+    //   socket.to(roomId).emit("user-joined", {
+    //     socketId: socket.id,
+    //     userName: userNames[socket.id],
+    //   });
 
-      // Send old messages (if any)
-      if (messages[roomId]) {
-        messages[roomId].forEach((msg) => {
-          socket.emit(
-            "chat-message",
-            msg.data,
-            msg.sender,
-            msg["socket-id-sender"]
-          );
+    //   // Send old messages (if any)
+    //   if (messages[roomId]) {
+    //     messages[roomId].forEach((msg) => {
+    //       socket.emit(
+    //         "chat-message",
+    //         msg.data,
+    //         msg.sender,
+    //         msg["socket-id-sender"],
+    //       );
+    //     });
+    //   }
+    // });
+
+    socket.on("join-call", async ({ roomId, userName }) => {
+      try {
+        const meeting = await Schedule.findOne({ meetingCode: roomId });
+
+        if (!meeting) {
+          return socket.emit("join-error", "Meeting not found");
+        }
+
+        const state = getJoinState(meeting);
+
+        // // 🚨 Always communicate via emit
+        // if (state === "CANCELLED") {
+        //   return socket.emit("join-error", "Meeting cancelled");
+        // }
+
+        // if (state === "TOO_EARLY") {
+        //   return socket.emit("join-error", "Too early to join");
+        // }
+
+        // if (state === "ENDED") {
+        //   return socket.emit("join-error", "Meeting ended");
+        // }
+
+        // if (state === "LOBBY") {
+        //   socket.emit("lobby", { roomId });
+        // }
+
+        // if (state === "JOIN") {
+        //   socket.emit("join-approved", { roomId });
+        // }
+
+        // // ✅ Now actually join room
+        // socket.join(roomId);
+        // socket.room = roomId;
+
+        if (state === "CANCELLED") {
+          return socket.emit("join-error", "Meeting cancelled");
+        }
+
+        if (state === "TOO_EARLY") {
+          return socket.emit("join-error", "Too early to join");
+        }
+
+        if (state === "ENDED") {
+          return socket.emit("join-error", "Meeting ended");
+        }
+
+        if (state !== "LOBBY" && state !== "JOIN") {
+          return socket.emit("join-error", "Invalid meeting state");
+        }
+
+        // ONLY NOW allow room join
+        socket.join(roomId);
+
+        socket.room = roomId;
+
+        if (state === "LOBBY") {
+          socket.emit("lobby", { roomId });
+        }
+
+        if (state === "JOIN") {
+          socket.emit("join-approved", { roomId });
+        }
+
+        userNames[socket.id] = userName || "User";
+        timeOnline[socket.id] = new Date();
+
+        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+
+        const existingUsers = clients
+          .filter((id) => id !== socket.id)
+          .map((id) => ({
+            socketId: id,
+            userName: userNames[id],
+          }));
+
+        socket.emit("existing-users", existingUsers);
+
+        socket.to(roomId).emit("user-joined", {
+          socketId: socket.id,
+          userName: userNames[socket.id],
         });
+      } catch (err) {
+        console.error("join-call error:", err);
+        socket.emit("join-error", "Internal server error");
       }
     });
 
