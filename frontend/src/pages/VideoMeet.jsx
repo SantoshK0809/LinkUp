@@ -221,41 +221,6 @@ const VideoMeet = () => {
       }
     };
 
-    // Remote stream handling
-    // pc.ontrack = (event) => {
-    //   const stream = event.streams[0];
-    //   if (!stream) return;
-
-    //   // SET ACTIVE USER TO REMOTE (NOT YOURSELF)
-    //   setActiveUser((prev) => {
-    //     // Only set if no active user yet (initial)
-    //     if (!prev) {
-    //       return {
-    //         socketId,
-    //         stream,
-    //         userName: peerUserNames,
-    //         videoEnabled: true,
-    //       };
-    //     }
-    //     return prev;
-    //   });
-
-    //   setVideos((prev) => {
-    //     const exists = prev.find((v) => v.socketId === socketId);
-    //     const peerUserName = peerUserNames.current[socketId] || "User";
-
-    //     if (exists) {
-    //       return prev.map((v) =>
-    //         v.socketId === socketId
-    //           ? { ...v, stream, userName: peerUserName }
-    //           : v,
-    //       );
-    //     }
-
-    //     return [...prev, { socketId, stream, userName: peerUserName }];
-    //   });
-    // };
-
     pc.ontrack = (event) => {
       const stream = event.streams[0];
       if (!stream) return;
@@ -426,28 +391,28 @@ const VideoMeet = () => {
     socketRef.current.on("chat-message", addMessage);
   };
 
-  let silence = () => {
-    let ctx = new AudioContext();
-    let oscillator = ctx.createOscillator();
-    let gain = ctx.createGain();
+  // let silence = () => {
+  //   let ctx = new AudioContext();
+  //   let oscillator = ctx.createOscillator();
+  //   let gain = ctx.createGain();
 
-    let dst = oscillator.connect(ctx.createMediaStreamDestination());
-    // dst.channelCount = 2;
+  //   let dst = oscillator.connect(ctx.createMediaStreamDestination());
+  //   // dst.channelCount = 2;
 
-    oscillator.start();
-    ctx.resume();
-    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
-  };
+  //   oscillator.start();
+  //   ctx.resume();
+  //   return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
+  // };
 
-  let black = ({ width = 640, height = 480 } = {}) => {
-    let canvas = Object.assign(document.createElement("canvas"), {
-      width,
-      height,
-    });
-    canvas.getContext("2d").fillRect(0, 0, width, height);
-    let stream = canvas.captureStream();
-    return Object.assign(stream.getVideoTracks()[0], { enabled: false });
-  };
+  // let black = ({ width = 640, height = 480 } = {}) => {
+  //   let canvas = Object.assign(document.createElement("canvas"), {
+  //     width,
+  //     height,
+  //   });
+  //   canvas.getContext("2d").fillRect(0, 0, width, height);
+  //   let stream = canvas.captureStream();
+  //   return Object.assign(stream.getVideoTracks()[0], { enabled: false });
+  // };
 
   let addMessage = (data, sender, socketIdSender) => {
     setMessages((prevMessages) => [...prevMessages, { sender, data }]);
@@ -463,16 +428,12 @@ const VideoMeet = () => {
     connectToSocketServer();
   };
 
-  let connect = () => {
-    setAskForUsername(false);
-    getMedia();
-  };
+  // let connect = () => {
+  //   setAskForUsername(false);
+  //   getMedia();
+  // };
 
   const handleVideo = () => {
-    // const videoTrack = localStreamRef.current.getVideoTracks()[0];
-    // if (!videoTrack) return;
-    // videoTrack.enabled = !videoTrack.enabled;
-    // setVideo(videoTrack.enabled);
 
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
 
@@ -606,185 +567,6 @@ const VideoMeet = () => {
   const totalUsers = videos.length + 1;
 
   return (
-    // <div className="flex min-h-screen flex-col bg-gray-900 text-white">
-    //   {/* ===== HEADER ===== */}
-    //   <header className="flex items-center justify-between border-b border-gray-300 px-6 py-3">
-    //     <h1 className="text-sm font-medium text-white">LinkUp Meeting</h1>
-    //     <span className="text-xs text-white">
-    //       {videos.length + 1} participants
-    //     </span>
-    //   </header>
-
-    //   {/* ===== MAIN ===== */}
-    //   <div className="flex flex-1 overflow-hidden">
-    //     {/* ===== VIDEO GRID ===== */}
-    //     <main className="flex-1 p-4">
-    //       <div className="grid h-full gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-    //         {/* SELF */}
-    //         <div
-    //           onClick={() =>
-    //             setActiveUser({
-    //               socketId: socketIdRef.current,
-    //               stream: localStreamRef.current,
-    //               userName: userName,
-    //               videoEnabled: video,
-    //             })
-    //           }
-    //           className="relative aspect-video bg-black rounded-xl overflow-hidden border border-gray-700"
-    //         >
-    //           {video ? (
-    //             <video
-    //               ref={(ref) => {
-    //                 localVideoRef.current = ref;
-    //                 if (ref && localStreamRef.current) {
-    //                   if (ref.srcObject !== localStreamRef.current) {
-    //                     ref.srcObject = localStreamRef.current;
-    //                   }
-    //                 }
-    //               }}
-    //               autoPlay
-    //               muted
-    //               className="w-full h-full object-cover"
-    //             />
-    //           ) : (
-    //             // <div className="flex items-center justify-center h-full w-full bg-gray-800 text-gray-400 text-xl">
-    //             //   {userName ? userName[0].toUpperCase() : "?"}
-    //             // </div>
-    //             <Avatar userName={userName}/>
-    //           )}
-    //           <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
-    //             {userName} (You)
-    //           </div>
-    //         </div>
-
-    //         {/* OTHERS */}
-    //         {videos.map((video) => (
-    //           <div
-    //             key={video.socketId}
-    //             onClick={() => setActiveUser(video)}
-    //             className="relative cursor-pointer aspect-video bg-black rounded-xl overflow-hidden border border-gray-700"
-    //           >
-    //             {/* <video
-    //               data-socket={video.socketId}
-    //               ref={(ref) => {
-    //                 if (ref && video.stream) {
-    //                   if (ref.srcObject !== video.stream) {
-    //                     ref.srcObject = video.stream;
-    //                   }
-    //                 }
-    //               }}
-    //               autoPlay
-    //               playsInline
-    //               className="w-full h-full object-cover"
-    //             /> */}
-    //             <RemoteVideo stream={video.stream} />
-    //             {/* <div className="absolute bottom-2 left-2 text-xs bg-black/60 px-2 py-1 rounded">
-    //               {video.userName || "User"}
-    //             </div> */}
-    //             <Avatar userName={video.userName} />
-    //           </div>
-    //         ))}
-    //       </div>
-    //     </main>
-
-    //     {/* ===== SIDE PANEL (NOT MODAL ANYMORE) ===== */}
-    //     {showModal && (
-    //       <aside className="hidden md:flex w-80 flex-col bg-gray-800 border-l border-gray-700">
-    //         <div className="p-4 border-b border-gray-700 flex justify-between">
-    //           <h2 className="text-sm font-semibold">Chat</h2>
-    //           <button onClick={() => setShowModal(false)}>✕</button>
-    //         </div>
-
-    //         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-    //           {messages.length !== 0 ? (
-    //             messages.map((item, index) => (
-    //               <div key={index}>
-    //                 <p className="text-sm font-semibold text-blue-400">
-    //                   {item.sender}
-    //                 </p>
-    //                 <p className="text-sm text-gray-300">{item.data}</p>
-    //               </div>
-    //             ))
-    //           ) : (
-    //             <p className="text-gray-400">No messages yet</p>
-    //           )}
-    //         </div>
-
-    //         <div className="p-4 border-t border-gray-700 flex gap-2">
-    //           <input
-    //             value={message}
-    //             onChange={(e) => setMessage(e.target.value)}
-    //             placeholder="Type a message..."
-    //             className="flex-1 px-3 py-2 rounded-lg bg-gray-700 outline-none"
-    //           />
-    //           <button
-    //             onClick={sendMessage}
-    //             className="bg-blue-600 px-4 rounded-lg"
-    //           >
-    //             Send
-    //           </button>
-    //         </div>
-    //       </aside>
-    //     )}
-    //   </div>
-
-    //   {/* ===== FOOTER ===== */}
-    //   <footer className="flex items-center justify-center gap-4 border-t border-gray-300 px-6 py-4">
-    //     <button
-    //       disabled={!mediaReady}
-    //       onClick={handleVideo}
-    //       className={
-    //         video
-    //           ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
-    //           : "p-3 bg-red-500 rounded-full hover:bg-red-600"
-    //       }
-    //     >
-    //       {video ? <VideocamIcon /> : <VideocamOffIcon />}
-    //     </button>
-
-    //     <button
-    //       disabled={!mediaReady}
-    //       onClick={handleAudio}
-    //       className={
-    //         audio
-    //           ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
-    //           : "p-3 bg-red-500 rounded-full hover:bg-red-600"
-    //       }
-    //     >
-    //       {audio ? <MicIcon /> : <MicOffIcon />}
-    //     </button>
-
-    //     {screenAvailable && (
-    //       <button
-    //         disabled={!mediaReady}
-    //         onClick={handleScreen}
-    //         className={
-    //           screen
-    //             ? "p-3 bg-gray-700 rounded-full hover:bg-gray-600"
-    //             : "p-3 bg-red-500 rounded-full hover:bg-red-600"
-    //         }
-    //       >
-    //         {screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}
-    //       </button>
-    //     )}
-
-    //     <button
-    //       onClick={() => setShowModal(!showModal)}
-    //       className="p-3 bg-gray-700 rounded-full hover:bg-gray-600 flex items-center justify-center"
-    //     >
-    //       <Badge badgeContent={newMessages} color="secondary">
-    //         {showModal ? <ChatBubbleIcon /> : <ChatIcon />}
-    //       </Badge>
-    //     </button>
-
-    //     <button
-    //       onClick={handleEndCall}
-    //       className="p-3 bg-red-600 rounded-full hover:bg-red-500"
-    //     >
-    //       <CallEndIcon />
-    //     </button>
-    //   </footer>
-    // </div>
 
     <div className="flex flex-col h-screen bg-gray-800 text-white">
       {/* HEADER */}
