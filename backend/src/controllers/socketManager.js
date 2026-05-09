@@ -111,8 +111,8 @@ export const connectToSocket = (server) => {
 
         // ONLY NOW allow room join
         socket.join(roomId);
-
         socket.room = roomId;
+        console.log(`[Socket ${socket.id}] Joined room: ${roomId}`);
 
         if (state === "LOBBY") {
           socket.emit("lobby", { roomId });
@@ -126,6 +126,7 @@ export const connectToSocket = (server) => {
         timeOnline[socket.id] = new Date();
 
         const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+        console.log(`[Room ${roomId}] Current clients:`, clients);
 
         const existingUsers = clients
           .filter((id) => id !== socket.id)
@@ -134,8 +135,10 @@ export const connectToSocket = (server) => {
             userName: userNames[id],
           }));
 
+        console.log(`[Socket ${socket.id}] Sending existing-users:`, existingUsers);
         socket.emit("existing-users", existingUsers);
 
+        console.log(`[Room ${roomId}] Broadcasting user-joined for ${socket.id}`);
         socket.to(roomId).emit("user-joined", {
           socketId: socket.id,
           userName: userNames[socket.id],
