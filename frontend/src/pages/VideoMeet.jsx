@@ -161,6 +161,9 @@ const VideoMeet = () => {
       return stream;
     } catch (err) {
       console.error("Media error:", err);
+      setVideo(false);
+      setAudio(false);
+      return null;
     }
   };
 
@@ -184,10 +187,9 @@ const VideoMeet = () => {
 
     // Validate dependencies
     if (!localStreamRef.current) {
-      console.error(
-        "Local stream not available. Cannot create peer connection.",
+      console.warn(
+        "Local stream not available. Proceeding to create peer connection for receiving only.",
       );
-      return null;
     }
 
     if (!socketRef.current) {
@@ -197,17 +199,30 @@ const VideoMeet = () => {
 
     // Create connection
     const pc = new RTCPeerConnection(peerConfigConnections);
+    // Add recvonly transceivers if no local media
+    if (!localStreamRef.current) {
+      pc.addTransceiver("audio", {
+        direction: "recvonly",
+      });
+
+      pc.addTransceiver("video", {
+        direction: "recvonly",
+      });
+    }
+    pc.iceQueue = []; // 🔥 Queue for early ICE candidates
 
     // Store AFTER validation
     peerConnections.current[socketId] = pc;
 
     // Add tracks safely
-    try {
-      localStreamRef.current.getTracks().forEach((track) => {
-        pc.addTrack(track, localStreamRef.current);
-      });
-    } catch (err) {
-      console.error("Error adding tracks:", err);
+    if (localStreamRef.current) {
+      try {
+        localStreamRef.current.getTracks().forEach((track) => {
+          pc.addTrack(track, localStreamRef.current);
+        });
+      } catch (err) {
+        console.error("Error adding tracks:", err);
+      }
     }
 
     // ICE candidate handling
@@ -223,7 +238,13 @@ const VideoMeet = () => {
 
     pc.ontrack = (event) => {
       const stream = event.streams[0];
-      if (!stream) return;
+      // if (!stream) return;
+
+      let remoteStream = new MediaStream();
+
+      event.streams[0]
+        ?.getTracks()
+        .forEach((track) => remoteStream.addTrack(track));
 
       const peerUserName = peerUserNames.current[socketId] || "User";
 
@@ -251,7 +272,10 @@ const VideoMeet = () => {
           );
         }
 
-        return [...prev, { socketId, stream, userName: peerUserName }];
+        return [
+          ...prev,
+          { socketId, stream: remoteStream, userName: peerUserName },
+        ];
       });
     };
 
@@ -272,11 +296,7 @@ const VideoMeet = () => {
   };
 
   const connectToSocketServer = async () => {
-    const stream = await getMediaStream();
-    if (!stream) {
-      console.error("No media stream. Aborting connection.");
-      return;
-    }
+    await getMediaStream(); // Attempt to get media, but proceed even if it fails
 
     socketRef.current = io(server);
 
@@ -286,17 +306,37 @@ const VideoMeet = () => {
         socketId: socketRef.current.id,
         stream: localStreamRef.current,
         userName: location.state?.username || "You",
-        videoEnabled: true,
+        videoEnabled: !!localStreamRef.current,
       });
-      socketRef.current.emit(
-        "join-call",
-        window.location.pathname,
-        location.state?.username || "User",
-      );
+      const roomId = window.location.pathname.split("/").pop();
+      socketRef.current.emit("join-call", {
+        roomId,
+        userName: location.state?.username || "User",
+      });
     });
 
     // EXISTING USERS
     socketRef.current.on("existing-users", async (users) => {
+      // Immediately add all existing users to the UI with null streams
+      setVideos((prev) => {
+        const newVideos = [...prev];
+        let changed = false;
+        users.forEach((u) => {
+          if (
+            u.socketId !== socketIdRef.current &&
+            !newVideos.find((v) => v.socketId === u.socketId)
+          ) {
+            newVideos.push({
+              socketId: u.socketId,
+              stream: null,
+              userName: u.userName,
+            });
+            changed = true;
+          }
+        });
+        return changed ? newVideos : prev;
+      });
+
       for (const user of users) {
         console.log("Existing user:", user);
         const userId = user.socketId;
@@ -307,6 +347,17 @@ const VideoMeet = () => {
 
         const pc = createPeerConnection(userId);
         if (!pc) continue;
+
+        // If we don't have a local stream, explicitly add transceivers to receive media
+        // before creating the offer. This ensures the SDP offer has audio/video sections.
+        // if (!localStreamRef.current) {
+        //   try {
+        //     pc.addTransceiver("audio", { direction: "recvonly" });
+        //     pc.addTransceiver("video", { direction: "recvonly" });
+        //   } catch (err) {
+        //     console.error("Error adding transceivers:", err);
+        //   }
+        // }
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -322,10 +373,23 @@ const VideoMeet = () => {
     // NEW USER JOINED → DO NOT CREATE OFFER
     socketRef.current.on("user-joined", (user) => {
       const userId = typeof user === "string" ? user : user.socketId; // fallback
-      if (user.userName) {
-        peerUserNames.current[userId] = user.userName;
-      }
-      console.log("User joined:", userId, user.userName);
+      const joinedUserName = user.userName || "User";
+      
+      peerUserNames.current[userId] = joinedUserName;
+      
+      console.log("User joined:", userId, joinedUserName);
+      
+      // Immediately add new user to the UI
+      setVideos((prev) => {
+        if (!prev.find((v) => v.socketId === userId)) {
+          return [
+            ...prev,
+            { socketId: userId, stream: null, userName: joinedUserName },
+          ];
+        }
+        return prev;
+      });
+
       // Wait for them to send offer
     });
 
@@ -365,14 +429,30 @@ const VideoMeet = () => {
             await pc.setRemoteDescription(desc);
           }
         }
+
+        // Process queued ICE candidates after remote description is set
+        if (pc.iceQueue && pc.iceQueue.length > 0) {
+          for (const ice of pc.iceQueue) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(ice));
+            } catch (err) {
+              console.warn("Error adding queued ICE:", err);
+            }
+          }
+          pc.iceQueue = [];
+        }
       }
 
       // HANDLE ICE
       if (signal.ice) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.ice));
-        } catch (err) {
-          console.warn("ICE error:", err);
+        if (pc.remoteDescription) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.ice));
+          } catch (err) {
+            console.warn("ICE error:", err);
+          }
+        } else {
+          pc.iceQueue.push(signal.ice);
         }
       }
     });
@@ -434,7 +514,6 @@ const VideoMeet = () => {
   // };
 
   const handleVideo = () => {
-
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
 
     if (!videoTrack) {
@@ -470,27 +549,55 @@ const VideoMeet = () => {
 
       // 🔥 Replace track (THIS IS THE KEY FIX)
       Object.values(peerConnections.current).forEach((pc) => {
-        const sender = pc.getSenders().find((s) => s.track.kind === "video");
+        const sender = pc
+          .getSenders()
+          .find(
+            (s) =>
+              s.track?.kind === "video" ||
+              (s.track === null &&
+                pc.getTransceivers().find((t) => t.sender === s)?.receiver.track
+                  .kind === "video"),
+          );
 
+        // If we don't have a sender for video yet (because we joined without media), we might need to change transceiver direction and replace track.
+        // For simplicity, let's just handle if sender exists. If not, they might need to reconnect to share screen.
         if (sender) {
           sender.replaceTrack(screenTrack);
+        } else {
+          // Find a video transceiver and upgrade it to sendrecv
+          const transceiver = pc
+            .getTransceivers()
+            .find((t) => t.receiver.track.kind === "video");
+          if (transceiver) {
+            transceiver.direction = "sendrecv";
+            transceiver.sender.replaceTrack(screenTrack);
+          }
         }
       });
 
       localVideoRef.current.srcObject = screenStream;
 
       screenTrack.onended = () => {
-        const cameraTrack = localStreamRef.current.getVideoTracks()[0];
-        if (!cameraTrack) return;
+        const cameraTrack = originalStream?.getVideoTracks()[0];
 
         localStreamRef.current = originalStream;
         localVideoRef.current.srcObject = originalStream;
 
         Object.values(peerConnections.current).forEach((pc) => {
-          const sender = pc.getSenders().find((s) => s.track.kind === "video");
+          const sender = pc.getSenders().find((s) => s.track?.kind === "video");
 
           if (sender) {
-            sender.replaceTrack(cameraTrack);
+            sender.replaceTrack(cameraTrack || null);
+
+            // If we didn't have a camera originally, we should probably set direction back to recvonly
+            if (!cameraTrack) {
+              const transceiver = pc
+                .getTransceivers()
+                .find((t) => t.sender === sender);
+              if (transceiver) {
+                transceiver.direction = "recvonly";
+              }
+            }
           }
         });
 
@@ -567,7 +674,6 @@ const VideoMeet = () => {
   const totalUsers = videos.length + 1;
 
   return (
-
     <div className="flex flex-col h-screen bg-gray-800 text-white">
       {/* HEADER */}
       <header className="px-6 py-3 bg-gray-900 flex justify-between items-center border-b border-gray-800">
@@ -582,7 +688,7 @@ const VideoMeet = () => {
         {/* MAIN VIDEO */}
         <div className="flex-1 p-3 flex justify-center items-center">
           <div className="relative w-[60%] h-[90%] bg-black rounded overflow-hidden">
-            {activeUser?.stream?.getVideoTracks?.()[0]?.enabled ?? true ? (
+            {activeUser?.stream?.getVideoTracks?.()[0]?.enabled ? (
               activeUser?.socketId === socketIdRef.current ? (
                 <video
                   ref={(ref) => {
@@ -662,7 +768,7 @@ const VideoMeet = () => {
           console.log(
             "User in strip User Stream : " + JSON.stringify(user.stream),
           );
-          const isVideoOn = user.stream?.getVideoTracks?.()[0]?.enabled ?? true;
+          const isVideoOn = user.stream?.getVideoTracks?.()[0]?.enabled;
 
           return (
             <div

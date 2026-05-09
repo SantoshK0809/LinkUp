@@ -124,7 +124,7 @@
 
 // export default WithAuth(Home);
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import WithAuth from "../utils/WithAuth";
 import { useNavigate } from "react-router-dom";
 import { Button, TextField } from "@mui/material";
@@ -134,7 +134,6 @@ import { AuthContextData } from "../context/AuthContext.jsx";
 import { io } from "socket.io-client";
 
 const server = import.meta.env.VITE_BASE_URL;
-const socket = io(server);
 
 const Home = () => {
   const navigate = useNavigate();
@@ -142,10 +141,13 @@ const Home = () => {
   const [meetingCode, setMeetingCode] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const socketRef = useRef(null);
 
-  const { addToUserHistory } = useContext(AuthContextData);
+  const { addToUserHistory, userData } = useContext(AuthContextData);
 
   useEffect(() => {
+    socketRef.current = io(server);
+    const socket = socketRef.current;
     socket.on("join-approved", async ({ roomId }) => {
       setMessage("Join approved");
 
@@ -171,15 +173,16 @@ const Home = () => {
     return () => {
       socket.off("join-approved");
       socket.off("join-error");
+      socket.disconnect();
     };
   }, []);
 
   const handleVideoCall = () => {
     if (!meetingCode.trim()) return;
 
-    socket.emit("join-call", {
+    socketRef.current.emit("join-call", {
       roomId: meetingCode,
-      userName: "Santosh",
+      userName: userData?.name || "User",
     });
   };
 
