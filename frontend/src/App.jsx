@@ -12,6 +12,7 @@ import HistoryWithAuth from "./pages/History";
 import CreateMeeting from "./pages/CreateMeeting";
 import NotFound from "./pages/NotFound";
 import Lobby from "./pages/Lobby";
+import Guest from "./pages/Guest.jsx";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/join-guest" element={<Guest/>} />
           <Route path="/history" element={<HistoryWithAuth />} />
           <Route path="/home" element={<Home />} />
           <Route path="/create-meeting" element={<CreateMeeting />} />

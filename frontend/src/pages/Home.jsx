@@ -132,8 +132,9 @@ import LoggedInNav from "../components/LoggedInNav";
 import { useContext } from "react";
 import { AuthContextData } from "../context/AuthContext.jsx";
 import { io } from "socket.io-client";
+import servers from "../environment.js";
 
-const server = import.meta.env.VITE_BASE_URL;
+const server = servers;
 
 const Home = () => {
   const navigate = useNavigate();

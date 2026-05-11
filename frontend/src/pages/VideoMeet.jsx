@@ -15,8 +15,9 @@ import Lobby from "./Lobby";
 import { AuthContextData } from "../context/AuthContext";
 import RemoteVideo from "../components/RemoteVideo";
 import Avatar from "../components/Avatar";
+import servers from "../environment";
 
-const server = import.meta.env.VITE_BASE_URL;
+const server = servers;
 
 const peerConfigConnections = {
   iceServers: [
