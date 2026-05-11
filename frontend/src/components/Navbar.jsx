@@ -19,9 +19,9 @@ export const Navbar = () => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-5">
-          <button className="text-base text-gray-600 hover:text-gray-900 transition cursor-pointer">
+          <Link to="/join-guest" className="text-base text-gray-600 hover:text-gray-900 transition cursor-pointer">
             Join as Guest
-          </button>
+          </Link>
           <Link
             to="/register"
             className="text-base text-gray-600 hover:text-gray-900 transition cursor-pointer"
