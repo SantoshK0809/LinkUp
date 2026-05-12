@@ -375,11 +375,11 @@ const VideoMeet = () => {
     socketRef.current.on("user-joined", (user) => {
       const userId = typeof user === "string" ? user : user.socketId; // fallback
       const joinedUserName = user.userName || "User";
-      
+
       peerUserNames.current[userId] = joinedUserName;
-      
+
       console.log("User joined:", userId, joinedUserName);
-      
+
       // Immediately add new user to the UI
       setVideos((prev) => {
         if (!prev.find((v) => v.socketId === userId)) {
@@ -472,29 +472,6 @@ const VideoMeet = () => {
     socketRef.current.on("chat-message", addMessage);
   };
 
-  // let silence = () => {
-  //   let ctx = new AudioContext();
-  //   let oscillator = ctx.createOscillator();
-  //   let gain = ctx.createGain();
-
-  //   let dst = oscillator.connect(ctx.createMediaStreamDestination());
-  //   // dst.channelCount = 2;
-
-  //   oscillator.start();
-  //   ctx.resume();
-  //   return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
-  // };
-
-  // let black = ({ width = 640, height = 480 } = {}) => {
-  //   let canvas = Object.assign(document.createElement("canvas"), {
-  //     width,
-  //     height,
-  //   });
-  //   canvas.getContext("2d").fillRect(0, 0, width, height);
-  //   let stream = canvas.captureStream();
-  //   return Object.assign(stream.getVideoTracks()[0], { enabled: false });
-  // };
-
   let addMessage = (data, sender, socketIdSender) => {
     setMessages((prevMessages) => [...prevMessages, { sender, data }]);
     if (socketIdSender !== socketIdRef.current) {
@@ -508,11 +485,6 @@ const VideoMeet = () => {
     setScreen(false);
     connectToSocketServer();
   };
-
-  // let connect = () => {
-  //   setAskForUsername(false);
-  //   getMedia();
-  // };
 
   const handleVideo = () => {
     const videoTrack = localStreamRef.current?.getVideoTracks()[0];
@@ -675,7 +647,7 @@ const VideoMeet = () => {
   const totalUsers = videos.length + 1;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-800 text-white">
+    <div className="flex flex-col min-h-screen bg-gray-800 text-white overflow-hidden">
       {/* HEADER */}
       <header className="px-6 py-3 bg-gray-900 flex justify-between items-center border-b border-gray-800">
         <h1 className="text-sm font-semibold">LinkUp</h1>
@@ -687,8 +659,8 @@ const VideoMeet = () => {
       {/* MAIN AREA */}
       <div className="flex flex-1 overflow-hidden">
         {/* MAIN VIDEO */}
-        <div className="flex-1 p-3 flex justify-center items-center">
-          <div className="relative w-[60%] h-[90%] bg-black rounded overflow-hidden">
+        <div className="flex-1 p-3 flex justify-center items-center overflow-hidden">
+          <div className="relative w-full max-w-5xl h-[45vh] sm:h-[55vh] md:h-[65vh] bg-black rounded-xl overflow-hidden">
             {activeUser?.stream?.getVideoTracks?.()[0]?.enabled ? (
               activeUser?.socketId === socketIdRef.current ? (
                 <video
@@ -723,10 +695,17 @@ const VideoMeet = () => {
         {/* CHAT PANEL */}
         {/* ===== SIDE PANEL (NOT MODAL ANYMORE) ===== */}
         {showModal && (
-          <aside className="hidden md:flex w-80 flex-col bg-gray-800 border-l border-gray-700">
+          <aside
+            className={`fixed md:static inset-0 md:inset-auto z-50 w-full md:w-80 flex flex-col bg-gray-800 border-l border-gray-700`}
+          >
             <div className="p-4 border-b border-gray-700 flex justify-between">
               <h2 className="text-sm font-semibold">Chat</h2>
-              <button onClick={() => setShowModal(false)}>✕</button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-xl px-2"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -763,7 +742,10 @@ const VideoMeet = () => {
       </div>
 
       {/* 🔥 BOTTOM STRIP (IMPORTANT FIX) */}
-      <div className="flex gap-2 p-2 overflow-x-auto bg-gray-900 border-t border-gray-800">
+      <div
+        className="flex gap-3 overflow-x-auto overflow-y-hidden px-3 py-3 bg-gray-900 border-t border-gray-800 scrollbar-hide"
+        style={{ scrollBehavior: "smooth" }}
+      >
         {stripUsers.map((user) => {
           console.log("User in strip Users are: " + JSON.stringify(user));
           console.log(
@@ -775,7 +757,7 @@ const VideoMeet = () => {
             <div
               key={user.socketId}
               onClick={() => setActiveUser(user)}
-              className="relative w-40 aspect-video bg-black mb-2 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
+              className=" relative flex-shrink-0 w-28 h-44 sm:w-32 sm:h-48 md:w-40 md:h-auto md:aspect-video bg-black rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition"
             >
               {isVideoOn ? (
                 user.socketId === socketIdRef.current ? (
@@ -790,7 +772,7 @@ const VideoMeet = () => {
                     }}
                     autoPlay
                     muted
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 ) : (
                   <RemoteVideo userName={user.userName} stream={user.stream} />
@@ -808,7 +790,7 @@ const VideoMeet = () => {
       </div>
 
       {/* CONTROLS */}
-      <footer className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-4 bg-gray-900/80 backdrop-blur px-6 py-3 rounded-full">
+      <footer className="flex items-center justify-center gap-4 border-t border-gray-700 bg-gray-900 px-4 py-4">
         <button
           onClick={handleVideo}
           className={`p-3 rounded-full ${video ? "bg-gray-700" : "bg-red-500"}`}

@@ -52,7 +52,7 @@ const Guest = () => {
 
     socketRef.current.emit("join-call", {
       roomId: meetingCode,
-      userName: userData?.name || "User",
+      userName:  "User",
     });
   };
 
