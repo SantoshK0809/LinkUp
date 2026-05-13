@@ -6,6 +6,7 @@ import { IconButton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import LoggedInNav from "../components/LoggedInNav";
 import axios from "axios";
+import servers from "../environment";
 
 const CreateMeeting = () => {
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ const CreateMeeting = () => {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/v1/users/create-meeting`,
+        `${servers}/api/v1/users/create-meeting`,
         payload,
         {
           headers: {
@@ -124,6 +125,7 @@ const CreateMeeting = () => {
 
       setMeetingCode(generatedCode);
       setCreated(true);
+      
     } catch (error) {
       console.error("Meeting creation failed", error);
     } finally {
