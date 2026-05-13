@@ -11,16 +11,6 @@ export const RegisterPage = () => {
   const [message, setMessage] = useState("");
   const [formState, setFormState] = useState(0);
 
-  // const [form, setForm] = useState({
-  //   fullname: "",
-  //   email: "",
-  //   password: "",
-  // });
-
-  // const handleChange = (e) => {
-  //   setForm({ ...form, [e.target.name]: e.target.value });
-  // };
-
   const { handleRegister } = useContext(AuthContextData);
   const navigate = useNavigate();
 
@@ -146,9 +136,9 @@ export const RegisterPage = () => {
         {/* Footer */}
         <p className="text-sm text-gray-500 text-center mt-6">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-blue-600 hover:underline">
             Sign in
-          </a>
+          </Link>
         </p>
       </div>
     </section>
