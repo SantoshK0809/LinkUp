@@ -18,7 +18,7 @@ app.set("port", (process.env.PORT || 3000));
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://linkup-frontend.netlify.app/"
+        "https://linkup-frontend.netlify.app"
     ],
     credentials: true
 }));

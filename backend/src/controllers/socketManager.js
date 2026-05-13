@@ -8,11 +8,19 @@ let timeOnline = {}; // socketId -> time
 let userNames = {}; // socketId -> userName
 
 export const connectToSocket = (server) => {
+  // const io = new Server(server, {
+  //   cors: {
+  //     origin: "*",
+  //     methods: ["GET", "POST"],
+  //     allowedHeaders: ["*"],
+  //     credentials: true,
+  //   },
+  // });
+
   const io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: ["http://localhost:5173", "https://linkup-frontend.netlify.app"],
       methods: ["GET", "POST"],
-      allowedHeaders: ["*"],
       credentials: true,
     },
   });
@@ -135,10 +143,15 @@ export const connectToSocket = (server) => {
             userName: userNames[id],
           }));
 
-        console.log(`[Socket ${socket.id}] Sending existing-users:`, existingUsers);
+        console.log(
+          `[Socket ${socket.id}] Sending existing-users:`,
+          existingUsers,
+        );
         socket.emit("existing-users", existingUsers);
 
-        console.log(`[Room ${roomId}] Broadcasting user-joined for ${socket.id}`);
+        console.log(
+          `[Room ${roomId}] Broadcasting user-joined for ${socket.id}`,
+        );
         socket.to(roomId).emit("user-joined", {
           socketId: socket.id,
           userName: userNames[socket.id],
