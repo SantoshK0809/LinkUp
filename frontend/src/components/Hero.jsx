@@ -36,7 +36,7 @@ export const Hero = () => {
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4  sm:items-center">
             <Link
-              to="/home"
+              to="/login"
               className="h-12 w-full bg-blue-400 flex items-center justify-center sm:w-auto min-w-[160px] rounded-full border border-gray-300 px-6 text-sm font-medium text-white hover:bg-blue-600 transition"
             >
               Get Started
